@@ -1,1 +1,7 @@
 imageHost: http://localhost:8000/api
+
+spring:
+  redis:
+    host: 192.168.1.102
+    timeout: 2000
+    time-to-live: 10000
