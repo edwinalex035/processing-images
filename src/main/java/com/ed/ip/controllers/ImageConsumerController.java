@@ -115,22 +115,25 @@ public class ImageConsumerController {
     return responseEntity;
   }
 
-  @RequestMapping(value = "/image-compress-scale", method = RequestMethod.GET)
-  public ResponseEntity<byte[]> getImageCompressAndScale() throws IOException {
+  @RequestMapping(value = "/image-compress-scale/{id}", method = RequestMethod.GET)
+  public ResponseEntity<byte[]> getImageCompressAndScale(@PathVariable final int id) throws IOException {
     log.info("Consuming endpoint of image");
+    byte[] imgOut = null;
     HttpHeaders headers = new HttpHeaders();
-    byte[] imgBytes =
-        restTemplate.getForObject(
-            "http://localhost:8080/api/publisher/image-response-entity", byte[].class);
     headers.setCacheControl(CacheControl.noCache().getHeaderValue());
-    InputStream in = new ByteArrayInputStream(imgBytes);
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    Thumbnails
-        .of(in)
-        .outputQuality(0.50)
-        .scale(0.50)
-        .toOutputStream(outputStream);
-    byte[] imgOut = outputStream.toByteArray();
+
+    imgOut = imageRepository.findById(id);
+    if (Objects.isNull(imgOut)) {
+      byte[] imgBytes =
+          restTemplate.getForObject(
+              "http://localhost:8080/api/publisher/image-response-entity", byte[].class);
+      InputStream in = new ByteArrayInputStream(imgBytes);
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      Thumbnails.of(in).outputQuality(0.50).scale(0.50).toOutputStream(outputStream);
+      imgOut = outputStream.toByteArray();
+      imageRepository.save(imgOut, id);
+      log.info("Image saved successfully in redis");
+    }
     ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(imgOut, headers, HttpStatus.OK);
     return responseEntity;
   }
